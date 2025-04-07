@@ -1,0 +1,25 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header bg-danger text-white">
+            <h4>Удаление лекции</h4>
+        </div>
+        <div class="card-body">
+            <p>Вы уверены, что хотите удалить лекцию "{{ object.title }}"?</p>
+            <p class="text-muted">Это действие нельзя отменить.</p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Да, удалить
+                </button>
+                <a href="{% url 'teacher_lectures' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Отмена
+                </a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

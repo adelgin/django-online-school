@@ -1,0 +1,10 @@
+asgiref==3.4.1
+buildtools
+backports.zoneinfo==0.2.1;python_version<"3.9"
+Django==4.0
+django-bootstrap-form==3.4
+django-crispy-forms==1.13.0
+django-filter==21.1
+mysqlclient==2.1.0
+sqlparse==0.4.2
+django-ckeditor-5

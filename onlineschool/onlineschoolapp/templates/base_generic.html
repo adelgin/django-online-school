@@ -1,0 +1,196 @@
+<html lang="en">
+<head>
+  {% block title %}<title>Онлайн-школа</title>{% endblock %}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+  <style>
+    .lecture-card, .quiz-card {
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .lecture-card {
+      background-color: #f8f9fa;
+      border-left: 4px solid #17a2b8;
+    }
+    .quiz-card {
+      background-color: #f8f9fa;
+      border-left: 4px solid #28a745;
+    }
+    .stats-card {
+      background-color: #e9ecef;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 5px;
+    }
+    .nav-pills > li.active > a, 
+    .nav-pills > li.active > a:hover, 
+    .nav-pills > li.active > a:focus {
+      background-color: #337ab7;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="container-fluid">
+    <header class="row">
+      <div class="col-sm-12">
+        <h1 class="text-center">Онлайн-школа</h1>
+      </div>
+    </header>
+
+    <div class="row">
+      <nav class="col-sm-2 sidebar">
+        {% block sidebar %}
+        <ul class="nav nav-pills nav-stacked">
+          <li class="active"><a href="{% url 'index' %}">Главная</a></li>
+          <li><a href="{% url 'courses' %}">Курсы</a></li>
+          <li><a href="{% url 'teachers' %}">Преподаватели</a></li>
+          <li><a href="{% url 'mentors' %}">Менторы</a></li>
+          <li><a href="{% url 'students' %}">Студенты</a></li>
+          <li><a href="{% url 'lessons' %}">Занятия</a></li>
+
+          {% if user.is_authenticated %}
+              {% if user.is_teacher %}
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'teacher_lectures' %}">
+                      <i class="fas fa-book-open"></i> Мои лекции
+                  </a>
+              </li>
+              {% elif user.is_student %}
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'student_lectures' %}">
+                      <i class="fas fa-book-open"></i> Лекции
+                  </a>
+              </li>
+              {% endif %}
+          {% endif %}
+
+
+          <br>
+          {% if user.is_authenticated %}
+            <li class="nav-header">Пользователь: {{ user.get_username }}</li>
+            {% if user.is_student %}
+              <li><a href="{% url 'grades' %}">Мои оценки</a></li>
+            {% endif %}
+            {% if user.is_teacher %}
+              <li><a href="{% url 'lesson_create' %}">Добавить занятие</a></li>
+              <li><a href="{% url 'lecture_create' %}">Добавить лекцию</a></li>
+            {% endif %}
+            {% if user.is_mentor %}
+              <li>Ментор: {{ user.get_username }}</li>
+            {% endif %}
+            <li><a href="{% url 'logout'%}?next=/">Выход</a></li>
+          {% else %}
+            <li><a href="{% url 'login'%}?next={{request.path}}">Вход</a></li>
+            <li><a href="{% url 'signup'%}?next={{request.path}}">Регистрация</a></li>
+          {% endif %}
+        </ul>
+        {% endblock %}
+      </nav>
+
+      <main class="col-sm-10">
+        {% block content %}
+        <div class="content-area">
+          <!-- Статистика -->
+          <div class="stats-card">
+            <h3>Статистика школы</h3>
+            <p>Курсов: {{ num_courses }}</p>
+            <p>Преподавателей: {{ num_teachers }}</p>
+            <p>Студентов: {{ num_students }}</p>
+          </div>
+          
+          <!-- Последние лекции -->
+          <div class="lectures-section">
+            <h2>Последние лекции</h2>
+            {% if latest_lectures %}
+              <div class="row">
+                {% for lecture in latest_lectures %}
+                  <div class="col-md-6">
+                    <div class="lecture-card">
+                      <h4><a href="{% url 'lecture_detail' lecture.id %}">{{ lecture.title }}</a></h4>
+                      <p>Курс: {{ lecture.course.name }}</p>
+                      <p>Преподаватель: {{ lecture.teacher.name }}</p>
+                      <p class="text-muted">Опубликовано: {{ lecture.created_at|date:"d.m.Y" }}</p>
+                      {% if user.is_teacher and lecture.teacher.user == user %}
+                        <a href="{% url 'lecture_update' lecture.id %}" class="btn btn-sm btn-info">Редактировать</a>
+                        <a href="{% url 'quiz_create' %}?lecture={{ lecture.id }}" class="btn btn-sm btn-success">Добавить тест</a>
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p>Пока нет доступных лекций.</p>
+            {% endif %}
+          </div>
+          
+          <!-- Активные тесты -->
+          <div class="quizzes-section">
+            <h2>Доступные тесты</h2>
+            {% if available_quizzes %}
+              <div class="row">
+                {% for quiz in available_quizzes %}
+                  <div class="col-md-6">
+                    <div class="quiz-card">
+                      <h4><a href="{% url 'take_quiz' quiz.id %}">{{ quiz.title }}</a></h4>
+                      <p>Лекция: {{ quiz.lecture.title }}</p>
+                      <p>Вопросов: {{ quiz.questions.count }}</p>
+                      {% if user.is_student %}
+                        {% if quiz in completed_quizzes %}
+                          <span class="badge badge-success">Пройден</span>
+                          <a href="{% url 'quiz_results' quiz.id %}" class="btn btn-sm btn-info">Посмотреть результаты</a>
+                        {% else %}
+                          <span class="badge badge-primary">Доступен</span>
+                          <a href="{% url 'take_quiz' quiz.id %}" class="btn btn-sm btn-primary">Пройти тест</a>
+                        {% endif %}
+                      {% endif %}
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <p>Пока нет доступных тестов.</p>
+            {% endif %}
+          </div>
+        </div>
+        {% endblock %}
+        
+        {% block pagination %}
+        <div class="pagination-container">
+          {% if is_paginated %}
+            <nav aria-label="Page navigation">
+              <ul class="pagination">
+                {% if page_obj.has_previous %}
+                  <li>
+                    <a href="{{ request.path }}?page={{ page_obj.previous_page_number }}" aria-label="Назад">
+                      <span aria-hidden="true">&laquo;</span>
+                    </a>
+                  </li>
+                {% endif %}
+                <li class="disabled"><span>Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span></li>
+                {% if page_obj.has_next %}
+                  <li>
+                    <a href="{{ request.path }}?page={{ page_obj.next_page_number }}" aria-label="Следующая">
+                      <span aria-hidden="true">&raquo;</span>
+                    </a>
+                  </li>
+                {% endif %}
+              </ul>
+            </nav>
+          {% endif %}
+        </div>
+        {% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

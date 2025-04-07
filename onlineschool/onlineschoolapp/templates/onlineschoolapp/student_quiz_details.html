@@ -1,0 +1,32 @@
+{% extends "base_generic.html" %}
+
+{% load quiz_filters %}
+
+{% block content %}
+<div class="container">
+    <h1>Результаты студента {{ student.name }}</h1>
+    <h3>Тест: {{ quiz.title }}</h3>
+    
+    <div class="card mb-4">
+        <div class="card-body">
+            <p>Правильных ответов: {{ correct_count }} из {{ total_questions }}</p>
+            <p>Процент правильных: {{ correct_count|divide:total_questions|multiply:100|floatformat:0 }}%</p>
+        </div>
+    </div>
+    
+    <h3>Детализация ответов:</h3>
+    {% for answer in answers %}
+    <div class="card mb-3 border-{% if answer.is_correct %}success{% else %}danger{% endif %}">
+        <div class="card-body">
+            <h5>{{ answer.question.text }}</h5>
+            <p>Тип вопроса: {{ answer.question.get_type_display }}</p>
+            <!-- Детали ответа в зависимости от типа вопроса -->
+        </div>
+    </div>
+    {% endfor %}
+    
+    <a href="{% url 'quiz_results' pk=quiz.id %}" class="btn btn-secondary">
+        Назад к общим результатам
+    </a>
+</div>
+{% endblock %}

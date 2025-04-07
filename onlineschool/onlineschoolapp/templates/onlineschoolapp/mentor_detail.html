@@ -1,0 +1,21 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  {% if mentor %}
+  <h1>Ментор: {{ mentor.name }}</h1>
+
+  <p><strong>Электронная почта:</strong> {{ mentor.email }}.</p>
+  <p><strong>Образование:</strong> {{ mentor.education }}.</p>
+  <p><strong>Наставляет студентов на курсах:</strong>
+      {% for course in mentor.course_set.all %}
+          <a href="{{ course.get_absolute_url }}">
+              {{ course.name }}
+          </a>
+          {% if not forloop.last %}, {% endif %}
+      {% endfor %}
+  </p>
+
+  {% else %}
+    <p>Пока что нет информации о менторе.</p>
+  {% endif %}
+{% endblock %}

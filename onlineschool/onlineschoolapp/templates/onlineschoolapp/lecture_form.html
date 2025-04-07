@@ -1,0 +1,58 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h1>{% if object %}Редактирование лекции{% else %}Создание новой лекции{% endif %}</h1>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-group">
+            {{ form.title.label_tag }}
+            {{ form.title }}
+            {% if form.title.errors %}
+                <div class="alert alert-danger">{{ form.title.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.course.label_tag }}
+            {{ form.course }}
+            {% if form.course.errors %}
+                <div class="alert alert-danger">{{ form.course.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.content.label_tag }}
+            {{ form.content }}
+            {% if form.content.errors %}
+                <div class="alert alert-danger">{{ form.content.errors }}</div>
+            {% endif %}
+        </div>
+        
+        <div class="form-group">
+            {{ form.image.label_tag }}
+            {{ form.image }}
+            {% if form.image.errors %}
+                <div class="alert alert-danger">{{ form.image.errors }}</div>
+            {% endif %}
+            {% if object and object.image %}
+                <div class="mt-2">
+                    <img src="{{ object.image.url }}" class="img-thumbnail" style="max-height: 200px;">
+                </div>
+            {% endif %}
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        {% if object %}
+            <a href="{% url 'lecture_detail' object.id %}" class="btn btn-secondary">Отмена</a>
+        {% else %}
+            <a href="{% url 'index' %}" class="btn btn-secondary">Отмена</a>
+        {% endif %}
+    </form>
+</div>
+
+{{ form.media }}  <!-- Подключаем CKEditor 5 -->
+{% endblock %}

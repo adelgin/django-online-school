@@ -1,0 +1,68 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>{{ lecture.title }}</h1>
+            <p class="text-muted">
+                Курс: <a href="{% url 'course_detail' lecture.course.id %}">{{ lecture.course.name }}</a> |
+                Преподаватель: {{ lecture.teacher.name }} |
+                Дата: {{ lecture.created_at|date:"d.m.Y" }}
+            </p>
+            
+            {% if lecture.image %}
+                <img src="{{ lecture.image.url }}" class="img-fluid mb-4" alt="{{ lecture.title }}">
+            {% endif %}
+            
+            <div class="lecture-content">
+                {{ lecture.content|safe }}
+            </div>
+            
+            {% if user.is_teacher and lecture.teacher.user == user %}
+                <div class="mt-4">
+                    <a href="{% url 'lecture_update' lecture.id %}" class="btn btn-primary">Редактировать</a>
+                    <a href="{% url 'quiz_create' %}?lecture={{ lecture.id }}" class="btn btn-success">Добавить тест</a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Тесты по этой лекции</h5>
+                </div>
+                <div class="card-body">
+                    {% if quizzes %}
+                        <ul class="list-group">
+                            {% for quiz in quizzes %}
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    {% if user.is_teacher and lecture.teacher.user == user %}
+                                        <a href="{% url 'quiz_detail' quiz.id %}">{{ quiz.title }}</a>
+                                    {% elif user.is_student %}
+                                        <a href="{% url 'take_quiz' quiz.id %}">{{ quiz.title }}</a>
+                                    {% endif %}
+                                    <span class="badge badge-primary badge-pill">{{ quiz.questions.count }} вопросов</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>Пока нет тестов для этой лекции.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lecture-content {
+        line-height: 1.6;
+        font-size: 1.1rem;
+    }
+    .lecture-content img {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+{% endblock %}

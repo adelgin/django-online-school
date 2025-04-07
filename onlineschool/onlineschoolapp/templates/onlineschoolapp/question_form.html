@@ -1,0 +1,153 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<form method="post" id="question-form" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  
+  {# Блок для вопросов с выбором #}
+  <div id="choice-options" class="question-options" data-visible-for="single_choice,multiple_choice">
+    <h4>Варианты ответов</h4>
+    {{ choice_formset.management_form }}
+    <div id="choices-container">
+      {% for form in choice_formset %}
+        <div class="choice-form">
+          {{ form.id }}
+          <div class="form-group">
+            {{ form.text.label_tag }}
+            {{ form.text }}
+          </div>
+          <div class="form-check">
+            {{ form.is_correct }}
+            <label class="form-check-label" for="{{ form.is_correct.id_for_label }}">Правильный</label>
+          </div>
+          {% if form.instance.pk %}
+            <div class="form-check">
+              {{ form.DELETE }}
+              <label class="form-check-label" for="{{ form.DELETE.id_for_label }}">Удалить</label>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <button type="button" id="add-choice" class="btn btn-secondary">Добавить вариант</button>
+  </div>
+
+  {# Блок для вопросов на соответствие #}
+  <div id="matching-options" class="question-options" data-visible-for="matching">
+    <h4>Пары соответствия</h4>
+    <div id="matching-pairs">
+      {% if form.instance.matching_pairs %}
+        {% for pair in form.instance.matching_pairs %}
+          <div class="matching-pair form-row mb-2">
+            <div class="col">
+              <input type="text" class="form-control" name="matching_left[]" value="{{ pair.left }}" placeholder="Левое значение">
+            </div>
+            <div class="col">
+              <input type="text" class="form-control" name="matching_right[]" value="{{ pair.right }}" placeholder="Правое значение">
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="matching-pair form-row mb-2">
+          <div class="col">
+            <input type="text" class="form-control" name="matching_left[]" placeholder="Левое значение">
+          </div>
+          <div class="col">
+            <input type="text" class="form-control" name="matching_right[]" placeholder="Правое значение">
+          </div>
+        </div>
+        <div class="matching-pair form-row mb-2">
+          <div class="col">
+            <input type="text" class="form-control" name="matching_left[]" placeholder="Левое значение">
+          </div>
+          <div class="col">
+            <input type="text" class="form-control" name="matching_right[]" placeholder="Правое значение">
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <button type="button" id="add-matching" class="btn btn-secondary">Добавить пару</button>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
+
+<style>
+  .question-options {
+    display: none;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+  }
+  .choice-form {
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: white;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Функция для обновления видимости блоков
+    function updateVisibility() {
+      const questionType = document.getElementById('id_type').value;
+      document.querySelectorAll('.question-options').forEach(block => {
+        const visibleFor = block.getAttribute('data-visible-for').split(',');
+        block.style.display = visibleFor.includes(questionType) ? 'block' : 'none';
+      });
+    }
+  
+    // Инициализация при загрузке
+    updateVisibility();
+    
+    // Обработчик изменения типа вопроса
+    document.getElementById('id_type').addEventListener('change', updateVisibility);
+    
+    // Динамическое добавление вариантов ответов
+    document.getElementById('add-choice').addEventListener('click', function() {
+      const formCount = document.querySelectorAll('#choices-container .choice-form').length;
+      const totalForms = document.getElementById('id_choices-TOTAL_FORMS');
+      const container = document.getElementById('choices-container');
+      
+      const newForm = document.createElement('div');
+      newForm.className = 'choice-form';
+      newForm.innerHTML = `
+        <div class="form-group">
+          <input type="text" name="choices-${formCount}-text" 
+                 class="form-control" placeholder="Текст варианта" required>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" name="choices-${formCount}-is_correct" 
+                 class="form-check-input" id="id_choices-${formCount}-is_correct">
+          <label class="form-check-label" for="id_choices-${formCount}-is_correct">
+            Правильный вариант
+          </label>
+        </div>
+        <input type="hidden" name="choices-${formCount}-id" id="id_choices-${formCount}-id">
+      `;
+      
+      container.appendChild(newForm);
+      totalForms.value = formCount + 1;
+    });
+    
+    // Динамическое добавление пар соответствия
+    document.getElementById('add-matching').addEventListener('click', function() {
+      const container = document.getElementById('matching-pairs');
+      const newPair = document.createElement('div');
+      newPair.className = 'matching-pair form-row mb-2';
+      newPair.innerHTML = `
+        <div class="col">
+          <input type="text" class="form-control" name="matching_left[]" placeholder="Левое значение">
+        </div>
+        <div class="col">
+          <input type="text" class="form-control" name="matching_right[]" placeholder="Правое значение">
+        </div>
+      `;
+      container.appendChild(newPair);
+    });
+  });
+  </script>
+{% endblock %}

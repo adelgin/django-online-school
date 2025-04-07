@@ -1,0 +1,43 @@
+{% extends "base_generic.html" %}
+{% load bootstrap %}
+
+{% block content %}
+    <h1>Наши менторы</h1>
+    <p>Наставники, демонстрирующие собственным примером упорство и дисциплину.</p>
+    <p>Обратиться к ним можно по любым вопросам - и по учебным, и по личным.</p>
+
+    <div class="container">
+
+        <form method="GET" style="position:absolute; top:0px; right:100px">
+            <h4>Примените фильтр для поиска</h4>
+            {{ filter.form|bootstrap }}
+            <button type="submit" class="btn btn-primary">Найти</button>
+        </form>
+
+        {% if mentor_list %}
+            {% if filter.qs %}
+            <ul>
+
+              {% for mentor in filter.qs %}
+              <li>
+                <a href="{{ mentor.get_absolute_url }}">{{ mentor.name }}</a> ({{ mentor.education }})
+                <p><strong>Наставляет студентов на курсах:</strong>
+                {% for course in mentor.course_set.all %}
+                    <a href="{{ course.get_absolute_url }}">
+                        {{ course.name }}
+                    </a>
+                {% if not forloop.last %}, {% endif %}
+                {% endfor %}
+                </p>
+              </li>
+              {% endfor %}
+
+            </ul>
+            {% else %}
+                <p>К сожалению, такого ментора нет...</p>
+            {% endif %}
+        {% else %}
+          <p>Менторов пока нет...</p>
+        {% endif %}
+    </div>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends "base_generic.html" %}
+
+{% load quiz_filters %}
+
+{% block content %}
+<div class="container">
+    <h1>Результаты теста: {{ quiz.title }}</h1>
+    
+    {% if teacher_mode %}
+        <!-- Режим преподавателя -->
+        <h3>Результаты студентов</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Студент</th>
+                    <th>Правильных ответов</th>
+                    <th>Всего вопросов</th>
+                    <th>Процент</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student, results in students_results.items %}
+                <tr>
+                    <td>{{ student.name }}</td>
+                    <td>{{ results.correct_count }}</td>
+                    <td>{{ results.total_questions }}</td>
+                    <td>{{ results.correct_count|divide:results.total_questions|multiply:100|floatformat:0 }}%</td>
+                    <td>
+                        <a href="{% url 'student_quiz_details' quiz_id=quiz.id student_id=student.id %}" 
+                           class="btn btn-sm btn-info">
+                            Подробнее
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">Никто из студентов еще не прошел этот тест</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+    {% else %}
+        <!-- Режим студента -->
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <h2>
+                    Ваш результат: {{ correct_answers }} из {{ total_questions }} 
+                    ({{ percentage }}%)
+                </h2>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div class="progress-bar 
+                        {% if percentage >= 80 %}bg-success
+                        {% elif percentage >= 50 %}bg-warning
+                        {% else %}bg-danger
+                        {% endif %}" 
+                        role="progressbar" 
+                        aria-valuenow="{{ percentage }}" 
+                        aria-valuemin="0" 
+                        aria-valuemax="100">
+                        {{ percentage }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <h3>Детализация:</h3>
+        {% for question in questions %}
+            <div class="card mb-3 border-{% if question.is_correct %}success{% else %}danger{% endif %}">
+                <div class="card-header">
+                    Вопрос {{ forloop.counter }} ({{ question.question.get_type_display }})
+                    <span class="float-right badge 
+                        {% if question.is_correct %}badge-success{% else %}badge-danger{% endif %}">
+                        {% if question.is_correct %}✓ Правильно{% else %}✗ Неправильно{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ question.question.text }}</h5>
+                    
+                    {% if question.question.type == 'text' %}
+                        <p><strong>Ваш ответ:</strong> {{ question.student_answer.text_answer|default:"-" }}</p>
+                        <p><strong>Правильный ответ:</strong> {{ question.question.correct_text_answer }}</p>
+                    
+                    {% elif question.question.type == 'single_choice' %}
+                        <p><strong>Ваш ответ:</strong> 
+                            {{ question.student_answer.selected_choices.all|first|default:"-" }}
+                        </p>
+                        <p><strong>Правильный ответ:</strong> 
+                            {{ question.question.choices.all|first_correct|default:"-" }}
+                        </p>
+                    
+                    {% elif question.question.type == 'multiple_choice' %}
+                        <p><strong>Ваши ответы:</strong>
+                            <ul>
+                                {% for choice in question.student_answer.selected_choices.all %}
+                                    <li>{{ choice.text }}</li>
+                                {% empty %}
+                                    <li>-</li>
+                                {% endfor %}
+                            </ul>
+                        </p>
+                        <p><strong>Правильные ответы:</strong>
+                            <ul>
+                                {% for choice in question.question.choices.all %}
+                                    {% if choice.is_correct %}
+                                        <li>{{ choice.text }}</li>
+                                    {% endif %}
+                                {% empty %}
+                                    <li>-</li>
+                                {% endfor %}
+                            </ul>
+                        </p>
+                    
+                    {% elif question.question.type == 'matching' %}
+                        <p><strong>Ваши соответствия:</strong></p>
+                        <ul>
+                            {% for pair in question.question.matching_pairs %}
+                                <li>
+                                    {{ pair.left }} → 
+                                    {{ question.student_answer.matching_answer|get_item:forloop.counter0 }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <p><strong>Правильные соответствия:</strong></p>
+                        <ul>
+                            {% for pair in question.question.matching_pairs %}
+                                <li>{{ pair.left }} → {{ pair.right }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

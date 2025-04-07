@@ -1,0 +1,15 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<h1>{{ quiz.title }}</h1>
+<form method="post">
+    {% csrf_token %}
+    {% for question in questions %}
+        <div>
+            <label>{{ question.text }}</label>
+            <input type="text" name="{{ question.id }}" required>
+        </div>
+    {% endfor %}
+    <button type="submit" class="btn btn-primary">Отправить</button>
+</form>
+{% endblock %}
