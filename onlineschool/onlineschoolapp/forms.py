@@ -97,13 +97,25 @@ class TeacherSignUpForm(UserCreationForm):
 class LectureForm(forms.ModelForm):
     class Meta:
         model = Lecture
-        fields = ['title', 'content', 'image', 'course']
+        fields = ['title', 'content', 'image', 'video', 'audio', 'youtube_url', 'course']
         widgets = {
             'content': CKEditor5Widget(
                 attrs={"class": "django_ckeditor_5"},
                 config_name="extends"
-            )
+            ),
+            'youtube_url': forms.URLInput(attrs={'placeholder': 'https://youtu.be/...'})
         }
+        
+    def clean(self):
+        cleaned_data = super().clean()
+        video = cleaned_data.get('video')
+        youtube_url = cleaned_data.get('youtube_url')
+        
+        if video and youtube_url:
+            raise forms.ValidationError(
+                "Выберите только один вариант - загрузку видео или ссылку на YouTube"
+            )
+        return cleaned_data
     
 # class LectureForm(forms.ModelForm):
 #     def __init__(self, *args, **kwargs):

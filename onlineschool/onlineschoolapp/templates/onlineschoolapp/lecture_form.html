@@ -1,58 +1,225 @@
 {% extends "base_generic.html" %}
 {% load static %}
-
+{% load youtube_filters %}
 {% block content %}
 <div class="container">
     <h1>{% if object %}Редактирование лекции{% else %}Создание новой лекции{% endif %}</h1>
     
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
         {% csrf_token %}
         
-        <div class="form-group">
-            {{ form.title.label_tag }}
-            {{ form.title }}
-            {% if form.title.errors %}
-                <div class="alert alert-danger">{{ form.title.errors }}</div>
-            {% endif %}
-        </div>
-        
-        <div class="form-group">
-            {{ form.course.label_tag }}
-            {{ form.course }}
-            {% if form.course.errors %}
-                <div class="alert alert-danger">{{ form.course.errors }}</div>
-            {% endif %}
-        </div>
-        
-        <div class="form-group">
-            {{ form.content.label_tag }}
-            {{ form.content }}
-            {% if form.content.errors %}
-                <div class="alert alert-danger">{{ form.content.errors }}</div>
-            {% endif %}
-        </div>
-        
-        <div class="form-group">
-            {{ form.image.label_tag }}
-            {{ form.image }}
-            {% if form.image.errors %}
-                <div class="alert alert-danger">{{ form.image.errors }}</div>
-            {% endif %}
-            {% if object and object.image %}
-                <div class="mt-2">
-                    <img src="{{ object.image.url }}" class="img-thumbnail" style="max-height: 200px;">
+        <!-- Основная информация -->
+        <div class="card mb-4">
+            <div class="card-header">Основная информация</div>
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    {{ form.title.label_tag }}
+                    {{ form.title }}
+                    <div class="invalid-feedback">
+                        Пожалуйста, укажите название лекции.
+                    </div>
+                    {% if form.title.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.title.errors }}</div>
+                    {% endif %}
                 </div>
+                
+                <div class="form-group mb-3">
+                    {{ form.course.label_tag }}
+                    {{ form.course }}
+                    <div class="invalid-feedback">
+                        Пожалуйста, выберите курс.
+                    </div>
+                    {% if form.course.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.course.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Контент лекции -->
+        <div class="card mb-4">
+            <div class="card-header">Содержание лекции</div>
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    {{ form.content.label_tag }}
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.content.errors }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Медиафайлы -->
+        <div class="card mb-4">
+            <div class="card-header">Медиаматериалы</div>
+            <div class="card-body">
+                <!-- Изображение -->
+                <div class="form-group mb-4">
+                    <label class="form-label">Изображение лекции</label>
+                    {{ form.image }}
+                    <small class="form-text text-muted">Рекомендуемый размер: 1200x630px</small>
+                    {% if form.image.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.image.errors }}</div>
+                    {% endif %}
+                    {% if object and object.image and object.image.name %}
+                        <div class="mt-2">
+                            <img src="{{ object.image.url }}" class="img-thumbnail" style="max-height: 200px;">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="image-clear" id="image-clear">
+                                <label class="form-check-label" for="image-clear">Удалить текущее изображение</label>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p>Изображение отсутствует.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Видео -->
+                <div class="form-group mb-4">
+                    <label class="form-label">Видеофайл</label>
+                    {{ form.video }}
+                    <small class="form-text text-muted">Поддерживаемые форматы: MP4, WebM, Ogg (макс. 50MB)</small>
+                    {% if form.video.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.video.errors }}</div>
+                    {% endif %}
+                    {% if object and object.video and object.video.url %}
+                        <div class="mt-2">
+                            <video controls class="img-thumbnail" style="max-height: 200px; max-width: 100%;">
+                                <source src="{{ object.video.url }}" type="video/mp4">
+                            </video>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="video-clear" id="video-clear">
+                                <label class="form-check-label" for="video-clear">Удалить текущее видео</label>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- YouTube -->
+                <div class="form-group mb-4">
+                    {{ form.youtube_url.label_tag }}
+                    {{ form.youtube_url }}
+                    <small class="form-text text-muted">Пример: https://www.youtube.com/watch?v=VIDEO_ID</small>
+                    {% if form.youtube_url.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.youtube_url.errors }}</div>
+                    {% endif %}
+                    {% if object and object.youtube_url %}
+                        <div class="mt-2">
+                            <div class="ratio ratio-16x9">
+                                <iframe src="https://www.youtube.com/embed/{{ object.youtube_url|youtube_id }}" 
+                                        frameborder="0" 
+                                        allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- Аудио -->
+                <div class="form-group mb-4">
+                    <label class="form-label">Аудиофайл</label>
+                    {{ form.audio }}
+                    <small class="form-text text-muted">Поддерживаемые форматы: MP3, WAV, OGG (макс. 20MB)</small>
+                    {% if form.audio.errors %}
+                        <div class="alert alert-danger mt-2">{{ form.audio.errors }}</div>
+                    {% endif %}
+                    {% if object and object.audio and object.audio.url %}
+                        <div class="mt-2">
+                            <audio controls class="w-100">
+                                <source src="{{ object.audio.url }}" type="audio/mpeg">
+                            </audio>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" name="audio-clear" id="audio-clear">
+                                <label class="form-check-label" for="audio-clear">Удалить текущее аудио</label>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Кнопки формы -->
+        <div class="d-flex justify-content-between">
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Сохранить
+                </button>
+                {% if object %}
+                    <a href="{% url 'lecture_detail' object.id %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Отмена
+                    </a>
+                {% else %}
+                    <a href="{% url 'index' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Отмена
+                    </a>
+                {% endif %}
+            </div>
+            {% if object %}
+                <a href="{% url 'lecture_delete' object.id %}" class="btn btn-danger">
+                    <i class="fas fa-trash"></i> Удалить лекцию
+                </a>
             {% endif %}
         </div>
-        
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        {% if object %}
-            <a href="{% url 'lecture_detail' object.id %}" class="btn btn-secondary">Отмена</a>
-        {% else %}
-            <a href="{% url 'index' %}" class="btn btn-secondary">Отмена</a>
-        {% endif %}
     </form>
 </div>
 
 {{ form.media }}  <!-- Подключаем CKEditor 5 -->
+
+<script>
+// Валидация формы
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+
+// Проверка конфликта видео и YouTube
+document.querySelector('form').addEventListener('submit', function(e) {
+    const videoFile = document.querySelector('#id_video').value;
+    const youtubeUrl = document.querySelector('#id_youtube_url').value;
+    
+    if (videoFile && youtubeUrl) {
+        e.preventDefault();
+        alert('Пожалуйста, выберите только один вариант - загрузку видео или ссылку на YouTube');
+        return false;
+    }
+});
+</script>
+
+<style>
+    .card {
+        margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
+    }
+    .card-header {
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .invalid-feedback {
+        display: none;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+    .was-validated .form-control:invalid ~ .invalid-feedback {
+        display: block;
+    }
+    .was-validated .form-control:invalid {
+        border-color: #dc3545;
+    }
+</style>
 {% endblock %}

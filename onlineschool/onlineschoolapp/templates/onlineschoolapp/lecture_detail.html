@@ -1,4 +1,5 @@
 {% extends "base_generic.html" %}
+{% load youtube_filters %}
 
 {% block content %}
 <div class="container">
@@ -11,58 +12,109 @@
                 Дата: {{ lecture.created_at|date:"d.m.Y" }}
             </p>
             
-            {% if lecture.image %}
-                <img src="{{ lecture.image.url }}" class="img-fluid mb-4" alt="{{ lecture.title }}">
+            {% if lecture.image and lecture.image.url %}  <!-- Проверка на наличие файла -->
+                <div class="mb-4">
+                    <img src="{{ lecture.image.url }}" class="img-fluid rounded" alt="{{ lecture.title }}" style="max-width: 100%; height: auto;">
+                </div>
             {% endif %}
             
-            <div class="lecture-content">
-                {{ lecture.content|safe }}
+            {# Блок для видео #}
+            {% if lecture.video and lecture.video.url %}  <!-- Проверка на наличие видеофайла -->
+            <div class="mb-4">
+                <h3><i class="fas fa-video"></i> Видеоматериал</h3>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <video class="w-100" controls {% if lecture.image and lecture.image.url %}poster="{{ lecture.image.url }}"{% endif %} style="max-width: 100%; height: auto;">
+                            <source src="{{ lecture.video.url }}" type="video/mp4">
+                            Ваш браузер не поддерживает видео.
+                        </video>
+                    </div>
+                </div>
+            </div>
+            {% elif lecture.youtube_url %}  <!-- Показываем YouTube, если есть ссылка -->
+            <div class="mb-4">
+                <h3><i class="fas fa-video"></i> Видеоматериал</h3>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="ratio ratio-16x9">
+                            <iframe src="https://www.youtube.com/embed/{{ lecture.youtube_url|youtube_id }}" 
+                                    frameborder="0" 
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                    allowfullscreen style="max-width: 100%; height: auto;"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {# Блок для аудио #}
+            {% if lecture.audio and lecture.audio.url %}  <!-- Проверка на наличие аудиофайла -->
+            <div class="mb-4">
+                <h3><i class="fas fa-headphones"></i> Аудиоматериал</h3>
+                <div class="card">
+                    <div class="card-body">
+                        <audio controls class="w-100">
+                            <source src="{{ lecture.audio.url }}" type="audio/mpeg">
+                            Ваш браузер не поддерживает аудио.
+                        </audio>
+                        <div class="mt-2">
+                            <a href="{{ lecture.audio.url }}" class="btn btn-sm btn-outline-primary" download>
+                                <i class="fas fa-download"></i> Скачать аудио
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {# Основное содержание лекции #}
+            <div class="lecture-content card mb-4">
+                <div class="card-body">
+                    {{ lecture.content|safe }}
+                </div>
             </div>
             
+            {# Кнопки управления для преподавателя #}
             {% if user.is_teacher and lecture.teacher.user == user %}
-                <div class="mt-4">
-                    <a href="{% url 'lecture_update' lecture.id %}" class="btn btn-primary">Редактировать</a>
-                    <a href="{% url 'quiz_create' %}?lecture={{ lecture.id }}" class="btn btn-success">Добавить тест</a>
+                <div class="btn-group mt-2 mb-4">
+                    <a href="{% url 'lecture_update' lecture.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </a>
+                    <a href="{% url 'quiz_create' %}?lecture={{ lecture.id }}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Добавить тест
+                    </a>
+                    <a href="{% url 'lecture_delete' lecture.id %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Удалить
+                    </a>
                 </div>
             {% endif %}
         </div>
         
+        {# Боковая панель с тестами #}
         <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Тесты по этой лекции</h5>
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Тесты по лекции</h5>
                 </div>
                 <div class="card-body">
                     {% if quizzes %}
-                        <ul class="list-group">
+                        <div class="list-group">
                             {% for quiz in quizzes %}
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    {% if user.is_teacher and lecture.teacher.user == user %}
-                                        <a href="{% url 'quiz_detail' quiz.id %}">{{ quiz.title }}</a>
-                                    {% elif user.is_student %}
-                                        <a href="{% url 'take_quiz' quiz.id %}">{{ quiz.title }}</a>
-                                    {% endif %}
-                                    <span class="badge badge-primary badge-pill">{{ quiz.questions.count }} вопросов</span>
-                                </li>
+                                <a href="{% if user.is_teacher %}{% url 'quiz_detail' quiz.id %}{% else %}{% url 'take_quiz' quiz.id %}{% endif %}" 
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                    {{ quiz.title }}
+                                    <span class="badge bg-primary rounded-pill">{{ quiz.questions.count }}</span>
+                                </a>
                             {% endfor %}
-                        </ul>
+                        </div>
                     {% else %}
-                        <p>Пока нет тестов для этой лекции.</p>
+                        <div class="alert alert-info mb-0">
+                            <i class="fas fa-info-circle"></i> Пока нет тестов для этой лекции.
+                        </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<style>
-    .lecture-content {
-        line-height: 1.6;
-        font-size: 1.1rem;
-    }
-    .lecture-content img {
-        max-width: 100%;
-        height: auto;
-    }
-</style>
 {% endblock %}

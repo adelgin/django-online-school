@@ -137,9 +137,15 @@ class Lecture(models.Model):
     title = models.CharField(max_length=200)
     content = models.TextField()
     image = models.ImageField(upload_to='lectures/', blank=True, null=True)
+    video = models.FileField(upload_to='lectures/videos/', blank=True, null=True,
+                           help_text="Загрузите видеофайл")
+    audio = models.FileField(upload_to='lectures/audio/', blank=True, null=True,
+                           help_text="Загрузите аудиофайл")
+    youtube_url = models.URLField(blank=True, null=True,
+                                help_text="Или вставьте ссылку на YouTube")
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(default=timezone.now)  # Добавьте это поле
+    created_at = models.DateTimeField(default=timezone.now)
     
     def __str__(self):
         return self.title
