@@ -75,7 +75,7 @@ python manage.py runserver
 
 Используемые технологии
 
-- Python 3.x
+- Python 10
 - Django
 SQLite
 - HTML/CSS/JavaScript
