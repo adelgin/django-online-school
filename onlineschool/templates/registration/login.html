@@ -2,34 +2,61 @@
 
 {% block content %}
 
-{% if form.errors %}
-  <p>Данные не корректны, попробуйте снова.</p>
-{% endif %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h2 class="text-center"></h2>
 
-{% if next %}
-  {% if user.is_authenticated %}
-    <p>Ваш аккаунт не имеет доступа к этой странице.</p>
-  {% else %}
-    <p>Авторизуйтесь, чтобы войти.</p>
-  {% endif %}
-{% endif %}
+      {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+          Данные не корректны, попробуйте снова.
+        </div>
+      {% endif %}
 
-<form method="post" action="{% url 'login' %}">
-{% csrf_token %}
-<table>
+      {% if next %}
+        <div class="alert alert-warning" role="alert">
+          {% if user.is_authenticated %}
+            Ваш аккаунт не имеет доступа к этой странице.
+          {% else %}
+            Авторизуйтесь, чтобы войти.
+          {% endif %}
+        </div>
+      {% endif %}
 
-<tr>
-  <td>{{ form.username.label_tag }}</td>
-  <td>{{ form.username }}</td>
-</tr>
+      <form method="post" action="{% url 'login' %}" style="text-align: center;">
+        {% csrf_token %}
+        
+        <div class="form-group">
+          <label for="id_username" style="display: none;">{{ form.username.label }}</label>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text"><i class="fas fa-user"></i></span>  <!-- Иконка для логина -->
+            </div>
+            <input type="text" name="username" id="id_username" class="form-control" 
+                   style="width: 277%;" placeholder="Имя пользователя" required>
+          </div>
+        </div>
 
-<tr>
-  <td>{{ form.password.label_tag }}</td>
-  <td>{{ form.password }}</td>
-</tr>
-</table>
+        <div class="form-group">
+          <label for="id_password" style="display: none;">{{ form.password.label }}</label>
+          <div class="input-group">
+            <div class="input-group-prepend">
+              <span class="input-group-text"><i class="fas fa-lock"></i></span>
+            </div>
+            <input type="password" name="password" id="id_password" 
+                   style="width: 277%;" class="form-control" placeholder="Пароль" required>
+          </div>
+        </div>
 
-<input type="submit" value="Войти" />
-<input type="hidden" name="next" value="{{ next }}" />
-</form>
+        <input type="hidden" name="next" value="{{ next }}" />
+        <button type="submit" class="btn btn-primary btn-block">Войти</button>
+      </form>
+
+      <div class="text-center mt-3">
+        <p>Нет аккаунта? <a href="{% url 'signup' %}?next={{ request.path }}">Зарегистрируйтесь</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
